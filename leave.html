@@ -83,7 +83,7 @@ button{
 
 <header>M2 Mobile Group</header>
 
-<!-- TAB 1 -->
+<!-- TAB 1 日历视图 -->
 <div id="tabCalendar" class="view active">
   <div class="calendar">
     <div class="month">
@@ -109,7 +109,7 @@ button{
   <button onclick="openModal()">+ Add Leave</button>
 </div>
 
-<!-- TAB 2 -->
+<!-- TAB 2 月度请假列表 -->
 <div id="tabLeave" class="view">
   <div class="card">
     <b>Monthly Leave List</b>
@@ -117,7 +117,7 @@ button{
   </div>
 </div>
 
-<!-- TAB 3 -->
+<!-- TAB 3 月度罚款明细 -->
 <div id="tabFine" class="view">
   <div class="card">
     <b>Monthly Fine Details</b>
@@ -135,7 +135,7 @@ button{
   <div class="tab" onclick="switchTab('Fine',this)">💰<br>Fine</div>
 </div>
 
-<!-- MODAL -->
+<!-- MODAL 添加请假 -->
 <div id="modal" class="modal">
   <div class="sheet">
     <select id="emp"></select>
@@ -146,7 +146,7 @@ button{
 </div>
 
 <script>
-const API = "https://script.google.com/macros/s/AKfycbxKf058FIRTwq8OP6CHh1gurq_YemXQ-MIW966DB1fbLxwFFjs7OQDTf-Vy9SLnMv3C3w/exec";
+const API = "https://script.google.com/macros/s/AKfycbxLj9I1DH8oIAWygRzB-KGgcLI7EB4apBoDqQnW5sksrmpSemh_cfCodWGKWVLCfc0aRw/exec";
 const FINE = 5000;
 
 const leaves = {};
@@ -161,6 +161,7 @@ function loadEmployees(){
   fetch(API + "?type=employees")
     .then(r=>r.json())
     .then(list=>{
+      const emp = document.getElementById("emp");
       emp.innerHTML="";
       list.forEach(e=>{
         const o=document.createElement("option");
@@ -172,16 +173,16 @@ function loadEmployees(){
     });
 }
 
-/* ===== Leave Data（关键修复） ===== */
+/* ===== Leave Data（修复后：日期字符串已由后端标准化） ===== */
 function loadLeaveData(){
-  // 🔥 每次刷新先清空
+  // 清空旧数据
   for(const k in leaves) delete leaves[k];
 
   fetch(API + "?type=leaves")
     .then(r=>r.json())
     .then(list=>{
       list.forEach(i=>{
-        const d = String(i.date).slice(0,10);
+        const d = String(i.date).slice(0,10); // 确保干净
         if(!leaves[d]) leaves[d]=[];
         leaves[d].push({
           name:i.name,
@@ -236,7 +237,8 @@ function renderCalendar(){
 
 /* ===== Day Leave ===== */
 function renderDayLeave(){
-  selectedDateText.innerText = selectedDate;
+  document.getElementById("selectedDateText").innerText = selectedDate;
+  const dayLeaveList = document.getElementById("dayLeaveList");
   dayLeaveList.innerHTML="";
   const list=leaves[selectedDate]||[];
   if(list.length===0){
@@ -254,6 +256,8 @@ function renderDayLeave(){
 
 /* ===== Submit ===== */
 function submitLeave(){
+  const emp = document.getElementById("emp");
+  const reason = document.getElementById("reason");
   const empId=emp.value;
   const name=emp.options[emp.selectedIndex].dataset.name;
   const arr=leaves[selectedDate]||[];
@@ -276,6 +280,7 @@ function submitLeave(){
 
 /* ===== Month ===== */
 function renderMonthLeave(){
+  const monthLeave = document.getElementById("monthLeave");
   monthLeave.innerHTML="";
   const y=current.getFullYear(), m=String(current.getMonth()+1).padStart(2,"0");
   Object.keys(leaves).filter(d=>d.startsWith(`${y}-${m}`)).sort().forEach(d=>{
@@ -286,6 +291,8 @@ function renderMonthLeave(){
   });
 }
 function renderMonthFine(){
+  const monthFineList = document.getElementById("monthFineList");
+  const monthFineTotal = document.getElementById("monthFineTotal");
   monthFineList.innerHTML="";
   let total=0;
   const y=current.getFullYear(), m=String(current.getMonth()+1).padStart(2,"0");
@@ -308,8 +315,8 @@ function switchTab(n,e){
   document.getElementById("tab"+n).classList.add("active");
   e.classList.add("active");
 }
-function openModal(){modal.classList.add("active")}
-function closeModal(){modal.classList.remove("active");reason.value=""}
+function openModal(){document.getElementById("modal").classList.add("active")}
+function closeModal(){document.getElementById("modal").classList.remove("active"); document.getElementById("reason").value=""}
 
 /* ===== INIT ===== */
 loadEmployees();
